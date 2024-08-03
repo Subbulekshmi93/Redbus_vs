@@ -6,7 +6,7 @@ import mysql.connector
 
 # Function to connect to the MySQL database and fetch data
 def fetch_data():
-    connection_string = 'mysql+mysqlconnector://USERNAME:YOURPASSWORD@localhost/redbus_p2'
+    connection_string = 'mysql+mysqlconnector://root:Rupeek%40123@localhost/redbus_p2'
 # Create SQLAlchemy engine
     engine = create_engine(connection_string)
     query = 'SELECT  busname,cast(arriving_time as char) as arriving_time, cast(departure_time as char) as departure_time, time_duration, bus_routelink, price, seat_available, bus_type, rating FROM bus_routes'
@@ -18,8 +18,9 @@ st.title('Scraped redbus Data Visualization')
 
 # Fetch data from the database
 data = fetch_data()
-print(data.dtypes)
-print(data)
+# print(data.dtypes)
+# print(data)
+#data cleaning and transformation
 data['busname'] = data['busname'].replace({'\r': '', '\n': ''}, regex=True)
 data['bus_routelink'] = data['bus_routelink'].replace({'\r': '', '\n': ''}, regex=True)
 data['price'] = pd.to_numeric(data['price'], errors='coerce')
@@ -46,16 +47,26 @@ min_price, max_price = st.slider(
     value=(float(data['price'].min()), float(data['price'].max()))
 )
 data['price'] = data['price'].astype(float)
+#filtering data
 filtered_data = data.copy()
 filtered_data = filtered_data[filtered_data['bus_routelink'] == selected_bus_routelink]
 if selected_bus_type != 'All':
         filtered_data = filtered_data[filtered_data['bus_type'] == selected_bus_type]
-filtered_data = filtered_data[
+        
+print(" data count: "+selected_bus_routelink +" - "+ selected_bus_type,len(filtered_data))
+
+if len(filtered_data)>0:        
+    filtered_data = filtered_data[
                      (filtered_data['price'] >= min_price) & (filtered_data['price'] <= max_price)]
-filtered_data = filtered_data[
+if len(filtered_data)>0:
+     filtered_data = filtered_data[
                      filtered_data['arriving_time'].apply(lambda x: x.hour <= selected_arriving_time)]
-filtered_data = filtered_data[
+if len(filtered_data)>0:
+    filtered_data = filtered_data[
                      filtered_data['departure_time'].apply(lambda x: x.hour >= selected_departure_time)]
 
-st.write('### Data Table', filtered_data)
+if len(filtered_data)>0:
+    st.write('Bus Details', filtered_data)
+else:
+     st.write('No bus found: '+ selected_bus_routelink +" - "+ selected_bus_type)   
 
